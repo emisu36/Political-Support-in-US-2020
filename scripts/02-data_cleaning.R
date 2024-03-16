@@ -1,11 +1,11 @@
 #### Preamble ####
-# Purpose: Cleans the raw plane data recorded by two observers..... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 6 April 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Cleans the raw plane data for better format.
+# Author: Ping-Jen (Emily) Su
+# Date: 15 Mar 2024
+# Contact: emily.su@mail.utoronto.ca 
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: Data is obtained from 01
+# Any other information needed? 
 
 #### Workspace setup ####
 library(tidyverse)
@@ -20,7 +20,7 @@ ces2020 <-
         "votereg" = col_integer(),
         "CC20_410" = col_integer(),
         "gender" = col_integer(),
-        "educ" = col_integer()
+        "birthyr" = col_integer()
       )
   )
 
@@ -35,28 +35,26 @@ ces2020 <-
     voted_for = if_else(CC20_410 == 1, "Biden", "Trump"),
     voted_for = as_factor(voted_for),
     gender = if_else(gender == 1, "Male", "Female"),
-    education = case_when(
-      educ == 1 ~ "No HS",
-      educ == 2 ~ "High school graduate",
-      educ == 3 ~ "Some college",
-      educ == 4 ~ "2-year",
-      educ == 5 ~ "4-year",
-      educ == 6 ~ "Post-grad"
-    ),
-    education = factor(
-      education,
-      levels = c(
-        "No HS",
-        "High school graduate",
-        "Some college",
-        "2-year",
-        "4-year",
-        "Post-grad"
-      )
+    age = as.numeric(2022 - birthyr),
+  age_group = case_when(
+    age <= 29 ~ "18-29",
+    age <= 44 & age > 29 ~ "30-44",
+    age <= 64 & age > 44 ~ "45-64",
+    age >= 65 ~ "65 and over",
+  ),
+  age_group = factor(
+    age_group,
+    levels = c(
+      "18-29",
+      "30-44",
+      "45-64",
+      "65 and over"
     )
+  )
   ) |>
-  select(voted_for, gender, education)
-
-
-#### Save data ####
-write_parquet(ces2020, "data/analysis_data/analysis_data.parquet")
+    select(voted_for, gender, age_group)
+  
+  
+  #### Save data ####
+  write_parquet(ces2020, "data/analysis_data/analysis_data.parquet")
+  
