@@ -12,6 +12,7 @@
 library(tidyverse)
 library(testthat) 
 library(here) 
+library(arrow)
 
 
 #### Test data ####
@@ -30,7 +31,7 @@ test_that("Data frame has correct columns", {
 
 # Check the class/type of variables in the data frame to match expectations.
 test_that("Check class", {
-  expect_type(analysis_data$age, "integer")
+  expect_type(analysis_data$age_group, "integer")
   expect_type(analysis_data$gender, "character")
   expect_type(analysis_data$voted_for, "integer")
 })

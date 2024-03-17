@@ -1,11 +1,11 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 11 February 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Models for logistics regression between gender, age and vote choice
+# Author: Ping_Jen (Emily) Su
+# Date: 15 Mar 2024 
+# Contact: emily.su@mail.utoronto.ca [...UPDATE THIS...]
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: The analysis_data has correct variables
+# Any other information needed? Preassumption for logistics regression satisfied
 
 
 #### Workspace setup ####
@@ -16,7 +16,7 @@ library(arrow)
 #### Read data ####
 analysis_data <- read_parquet("data/analysis_data/analysis_data.parquet")
 
-set.seed(853)
+set.seed(886)
 
 analysis_data <- 
   ces2020 |> 
@@ -26,12 +26,12 @@ analysis_data <-
 ### Model data ####
 first_model <-
   stan_glm(
-    formula = voted_for ~ gender + education,
+    formula = voted_for ~ gender + age_group,
     data = analysis_data,
     family = binomial(link = "logit"),
     prior = normal(location = 0, scale = 2.5, autoscale = TRUE),
     prior_intercept = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    seed = 853
+    seed = 886
   )
 
 prior_summary(first_model)

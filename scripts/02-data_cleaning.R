@@ -35,7 +35,7 @@ ces2020 <-
     voted_for = if_else(CC20_410 == 1, "Biden", "Trump"),
     voted_for = as_factor(voted_for),
     gender = if_else(gender == 1, "Male", "Female"),
-    age = as.numeric(2022 - birthyr),
+    age = as.numeric(2020 - birthyr),
   age_group = case_when(
     age <= 29 ~ "18-29",
     age <= 44 & age > 29 ~ "30-44",

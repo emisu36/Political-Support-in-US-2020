@@ -1,15 +1,15 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Exploring the Influence of Gender and Age on Voting Behavior in the 2020 U.S. Presidential Election"
+subtitle: "A Statistical Analysis of Socio-Demographic Factors Shaping Electoral Preferences"
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: LINK."
+  - Ping-Jen (Emily) Su
+thanks: "Code and data are available at: https://github.com/emisu36/Political-Support-in-US-2020."
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "This study examines the influence of gender and age group on voting behavior in the 2020 U.S. presidential election using Logistic Regression and Bayesian analysis. Contrary to traditional assumptions, males show a lower likelihood of voting for Trump. Additionally, distinct voting patterns emerge across age groups, with younger voters displaying a higher propensity to support Biden. These findings highlight the complex dynamics of political participation and suggest avenues for further research into demographic influences on electoral outcomes."
 format: pdf
 number-sections: true
+toc: true
 bibliography: references.bib
 ---
 
@@ -29,92 +29,130 @@ library(modelsummary)
 library(rstanarm)
 library(tidybayes)
 library(tidyverse)
-library(palmerpenguins)
+library(testthat) 
+library(here) 
+library(arrow)
 ```
 
 
 # Introduction
 
-You can and should cross-reference sections and sub-sections. We use @citeR and @rohan.
+A fundamental component of modern civilizations is the democratic process of choosing leaders, which represents the will of the people in determining how they will be governed. According to this concept, US presidential elections are significant occasions that are characterized by heated discussions, passionate campaigns, and important choices. The complex interactions between socioeconomic, cultural, and demographic elements that affect voting behaviour and influence the political landscape can be examined via the prism of these elections.
 
-The remainder of this paper is structured as follows. @sec-data....
+Following the 2020 U.S. presidential election, which was marked by previously unseen difficulties and increased political divisiveness, it is important to analyze the key factors that shaped the results. The paper conducts a thorough investigation, concentrating on the relationship between voting behaviour, age, and gender. By examining these factors, we hope to shed light on the larger patterns influencing American democracy and clarify the complex web of factors that inform people's voting decisions, such as recent effects of gender on vote choice [@karami_clark_mackenzie_lee_zhu_boyajieff_goldschmidt_2022].
 
+Our investigation is based on thorough empirical analysis and uses information from credible sources and academic studies. By utilizing sophisticated statistical techniques, such as logistic regression, we aim to reveal complex relationships between political tendencies and demographic characteristics. By doing this, we hope to further our understanding of the factors that influence electoral behaviour and how they affect democratic governance.
+
+Furthermore, this study is driven by a recognition of the transformative potential of electoral research. We hope to contribute to scholarly discourse by clarifying the influence of age and gender on voting patterns, as well as to offer practical advice for electoral strategists, political analysts, and policymakers. Our findings are intended to equip stakeholders with the knowledge necessary to successfully navigate future election landscapes while negotiating the complicated terrain of American politics.
+By working together, we hope to make a significant contribution to the current discussion about democracy, voting, and the quest of a more representative and inclusive political system. This study was done possible by @citeR and @rohan.
 
 
 # Data {#sec-data}
+For this study, we utilized data sourced from the 2020 Cooperative Congressional Election Study (CCES) [@ces2020], which we processed using R, a programming language widely employed for statistical analysis [@citeR]. To manage the dataset efficiently, we leveraged tools from the `tidyverse` suite [@citetidyverse], including `ggplot2` for visualization [@citeggplot], `dplyr` for data manipulation [@citedplyr], `readr` for data importing [@citereadr], and `tibble` for data formatting [@citetibble]. Model summaries were generated using the `modelsummary` package [@citemodelsummary]. Data retrieval was facilitated by the `dataverse` package [@citedataverse], while the reliability of our data processing and analysis was verified using the `testthat` package [@citetestthat] The `here` package [@citehere] aided in maintaining file organization and ensuring the reproducibility of our analysis.
 
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+## Data Discussion 
+The study focuses on examining the relationship between gender, age group, and voting preference for the 2020 U.S. presidential election candidates. The dataset comprises information on the number of individuals who voted for either Trump or Biden across different gender and age groups. Summing up all participants, we have 43,554 responses across different gender and age groups.
+
+- For the gender variable, we included only male and female which are choices more of sex instead of gender. We have made the decision to remove N/A responses as it may be difficult to the real proportion of male and female for the N/A responses without causing estimation and ethical concerns.
+- For the age group variable, we aligned our age groups with the breakdown given in the CCES guide [@ces2020]. We also obtained the age of the participants by calculating the difference between 2020 and the birth year variable (birthyr) given by the dataset. Although there may be concerns of birthday not past yet for the participants, calculating full age would be the most sensible option as birthdays are not provided in the dataset.
+- For the voted for variable, we have decided to compare only Trump and Biden as they are the representatives of the two largest parties in the United States. This choice also helps the data fit into the requirement of the logistics regression model we hope to perform. 
+
+## Data Summary
+
+The data is structured as follows:
+
+- voted_for: Categorical variable indicating the candidate voted for (Trump or Biden).
+- gender: Categorical variable representing the gender of the voter (Female or Male).
+- age_group: Categorical variable denoting the age group of the voter (18-29, 30-44, 45-64, or 65 and over).
+- n: Number of individuals in each category who voted for the respective candidate.
+
+@fig-modelsummary provides counts of individuals who voted for Trump and Biden, segmented by gender and age group. For instance, in the "Trump" category, the number of females and males who voted for Trump is provided across different age groups. Similarly, the "Biden" category presents counts of individuals who voted for Biden across gender and age groups.
+
 
 ```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
 #| echo: false
-
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
-```
-
-Talk more about it.
-
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
-
-```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
-#| echo: false
+#| eval: true
+#| label: fig-modelsummary
+#| fig-cap: "Data Distribution Across Vote, Age Group, Gender"
 #| warning: false
-#| message: false
+analysis_data <- read_parquet(here::here("data/analysis_data/analysis_data.parquet"))
 
-analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
-
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
+analysis_data |>
+  ggplot(aes(x = age_group, fill = voted_for)) +
+  stat_count(position = "dodge") +
+  facet_wrap(facets = vars(gender)) +
   theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
+  labs(
+    x = "Highest age",
+    y = "Number of respondents",
+    fill = "Voted for"
+  ) +
+  coord_flip() +
+  scale_fill_brewer(palette = "Set1") +
+  theme(legend.position = "bottom")
+
 ```
 
-Talk way more about it. 
 
+Some interactions between the variables can be noticed in @fig-modelsummary.
+
+- Between gender and age group, there is a trend of increasing support for Biden with age, with the highest proportion of Biden supporters in the 45-64 and 65 and over age groups among females. At the same time for males, there is a trend of increasing support for Biden with age, although less pronounced compared to females.
+- Among gender and candidate voted for, there is a higher proportion of Biden supporters across all age groups for females compared to males.Among males, there is a higher proportion of Trump supporters across all age groups compared to females.
+- For age group and candidate voted for, there is a higher proportion of Biden supporters among females compared to males, across all age groups. For both genders, the proportion of Biden supporters tends to increase with age, while the proportion of Trump supporters decreases with age, although there are some fluctuations.
+- Between all three variables,the relationship between age group and the candidate voted for may differ based on gender. For instance, among females, the proportion of Biden supporters increases with age, while among males, the proportion of Trump supporters decreases with age.There may also be variations in voting preferences within each age group based on gender, although the exact patterns may vary.
+
+Overall, these patterns suggest complex interactions between gender, age group, and the candidate voted for, highlighting the importance of considering multiple demographic factors when analyzing voting behaviour.
 
 
 # Model
 
-The goal of our modelling strategy is twofold. Firstly,...
+Our study implements logistic regression to examine the relationship between gender, age group, and voting preference for the 2020 U.S. presidential election candidates. Logistic regression is suitable for analyzing binary outcomes, making it an appropriate choice for investigating whether individuals voted for Biden based on their gender and age group.
 
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+While Bernoulli distributions represent the binary outcome in logistic regression, Bayesian analysis extends this framework by incorporating prior beliefs and updating them using observed data to obtain a posterior distribution of model parameters. The Bayesian model is shown in
+ [Appendix -@sec-model-details].
 
 ## Model set-up
 
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
+In this logistic regression model, we aim to predict the probability of a binary outcome $y_i$ (voting for Biden) for each individual $i$ based on their gender and age group. We denote $y_i$ as the binary outcome variable for individual $i$, indicating whether they voted for Biden (1) or not (0).$\pi_i$ is the probability of individual $i$ voting for Biden, given by the logistic function. logit($\pi_i$) is the logit transformation of the probability $\pi_i$, which is modeled as a linear combination of predictors.
+
 
 \begin{align} 
 y_i|\pi_i &\sim \mbox{Bern}(\pi_i) \\
-\mbox{logit}(\pi_i) &= \alpha + \beta_1 \times \mbox{gender}_i + \beta_2 \times \mbox{education}_i\\
+\mbox{logit}(\pi_i) &= \alpha + \beta_1 \times \mbox{gender}_i + \beta_2 \times \mbox{age group}_i\\
 \alpha &\sim \mbox{Normal}(0, 2.5) \\
 \beta_1 &\sim \mbox{Normal}(0, 5.02) \\
 \beta_2 &\sim \mbox{Normal}(0, 6.34)
 \end{align}
 
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
+The intercept term, $a$, in the logistic regression equation. It represents the log-odds of voting for Biden when both gender and age group are zero. The coefficient, $\beta_1$, associated with the gender predictor. It represents the change in the log-odds of voting for Biden for a one-unit change in the gender variable, holding age group constant. $\beta_2$ is the coefficient associated with the age group predictor. It represents the change in the log-odds of voting for Biden for a one-unit change in the age group variable, holding gender constant.
+The coefficients 
+$a$, $\beta_1$, and  $\beta_2$ are assigned prior distributions to reflect our uncertainty about their values before observing the data
 
+The model will estimate the posterior distributions of these parameters based on the observed data, allowing us to make inferences about the relationship between gender, age group, and the likelihood of voting for Biden.
+
+The model is built using R [@citeR] and the `rstanarm` package of @rstanarm.
 
 ### Model justification
 
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
+We anticipate that both gender and age group will influence the likelihood of individuals voting for Biden in the 2020 US presidential election. To be specific, we hypothesize that gender may play a significant role in shaping voting behavior, as  gender identities and associated social roles can influence political preferences. Additionally, age group is expected to be a relevant predictor, as age often correlates with differing life experiences, values, and policy priorities, which in turn may influence voting decisions.
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+For gender, we expect that male respondents may exhibit different voting preferences compared to female respondents. Regarding age group, we anticipate that older individuals may demonstrate different voting behaviors compared to younger age groups. Older individuals, particularly those in the 65 and over category, may have different policy priorities compared to younger age groups, which could show in their voting choices. Conversely, younger age groups, such as those in the 18-29 category, may have unique perspectives or concerns that influence their electoral preferences.
 
 
 # Results
 
-Our results are summarized in @tbl-modelresults.
+The logistic regression analysis revealed important predictors of voting for Biden in the 2020 US presidential election. The intercept term, representing the expected  voting for Biden when all other predictors are zero, was estimated to be 1.76 (SE = 0.35), indicating a positive baseline probability of voting for Biden.
+
+Gender emerged as a significant predictor of voting behavior, with males exhibiting lower log-odds of voting for Biden compared to females. The coefficient for gender (Male) was estimated to be -0.38 (SE = 0.13), suggesting that males were less likely to vote for Biden than females after controlling for other variables.
+
+In terms of age group, distinct patterns were observed across different age categories. Compared to the reference category (18-29), individuals in the 30-44 age group showed a decrease of voting for Biden by -0.56 (SE = 0.39). Similarly, individuals in the 45-64 age group displayed a larger decrease in the log-odds of voting for Biden, with a coefficient of -1.36 (SE = 0.37). The largest decrease was observed among individuals aged 65 and over, with a coefficient of -1.55 (SE = 0.38), indicating a substantial reduction in the likelihood of voting for Biden compared to the youngest age group.
+
+The model fit statistics indicated moderate model performance, with an R-squared value of 0.056, suggesting that approximately 5.6% of the variance in voting behavior for Biden was explained by the predictors included in the model. Overall, the results suggest that both gender and age group are significant predictors of voting behavior for Biden in the 2020 US presidential election, with males and older individuals demonstrating decreased likelihoods of supporting Biden compared to females and younger age groups, respectively.
+
+
+The results are summarized in @tbl-modelresults.
+
+\newpage
 
 ```{r}
 #| echo: false
@@ -132,7 +170,7 @@ first_model <-
 #| echo: false
 #| eval: true
 #| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
+#| tbl-cap: "Logistic Regression Coefficients Estimating the Effect of Gender and Age Group on Voting for Biden"
 #| warning: false
 
 modelsummary::modelsummary(
@@ -144,32 +182,35 @@ modelsummary::modelsummary(
 )
 ```
 
-```{r}
-#| echo: false
-#| eval: true
-#| label: fig-modelresultsfig
-#| fig-cap: "Explanatory models of flight time based on wing width and wing length"
-#| warning: false
-
-modelplot(first_model, conf_level = 0.9) +
-  labs(x = "90 per cent credibility interval")
-```
-
-
 
 # Discussion
 
-## First discussion point {#sec-first-point}
+This study looks into the influence of gender and age group on voting behavior in the context of the 2018 U.S. election. Using Logistic Regression and Bayesian analysis, we explore how these demographic factors shape electoral decisions, providing valuable insights into the dynamics of political participation.
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+## Age Group Influence on Voting Patterns {#sec-first-point}
 
-## Second discussion point
+As we shift our focus to age groups, we find that various demographic cohorts exhibit diverse voting behaviours. Voters under the age of thirty-nine, in particular, were more likely than older age groups to support Biden. This generational gap emphasizes the differing viewpoints held by people from various generations and emphasizes the significance of age in determining political preferences. A more sophisticated knowledge of electoral dynamics can be achieved by comprehending these age-based voting patterns, which offer insightful information on the changing political beliefs and behaviours of different age groups.
 
-## Third discussion point
+## Gender Influence on Voting Patterns
+
+We find interesting trends about voting preferences and gender in our analysis. Male voters were less likely than female voters to support Trump, which went against the established gender-based voting conventions. This research points to an emerging political environment where reasons other than economic conservatism are important, implying that gender dynamics in political behaviour may be more nuanced than previously thought. The gender-based voting trends that have been discovered provide insight into how political identity and candidate assessment are evolving.
 
 ## Weaknesses and next steps
 
-Weaknesses and next steps should also be included.
+There are a few drawbacks to the logistic regression model, despite the fact that it offers insightful information on the connection between voting behaviour, age group, and gender. Initially, unmeasured confounding variables like education level, political ideology, and regional variations may limit the model's forecast accuracy. If these factors are not included in the study, the results may have skewed estimations and be less broadly applicable. Secondly, the cross-sectional nature of the data utilized in this study hinders our ability to examine changes in voting behaviour over time or demonstrate causality. By using a wider range of factors and using longitudinal data analysis to capture temporal patterns in voting preferences, future study could solve these limitations. Additionally, the sample size and composition of the dataset may not fully represent the diverse population of voters in the United States, potentially limiting the external validity of the findings. Future studies could benefit from larger and more representative samples to enhance the generalizability of the results.
+
+## Future Research 
+
+Future research in this area could explore several avenues to build upon the findings of this study. First, incorporating additional demographic, socioeconomic, and political variables into the analysis could provide a more comprehensive understanding of the factors driving voting behavior. To represent the complex dynamics of electoral decision-making, variables including education level, political ideology, party affiliation, and geographic region could be added. Second, long-term research on people's voting patterns may provide insight into the consistency and changes in political inclinations among various demographic groupings. Researchers could look at how societal trends, political events, and changes in life circumstances affect voting decisions by using longitudinal data analysis. Finally, by shedding light on the underlying attitudes and reasons influencing voters' decisions, qualitative research techniques like focus groups and interviews could supplement quantitative analysis. Future study could produce a more thorough and nuanced knowledge of the numerous elements influencing electoral outcomes by utilizing a multidisciplinary approach that integrates quantitative and qualitative approaches.
+
+
+## Conclusion 
+
+In conclusion, this study examined the association between gender, age group, and voting behaviour in the 2020 U.S. presidential election using logistic regression analysis. The results showed that people's likelihood of voting for Biden was highly influenced by their age and gender. In particular, compared to females and younger age groups, males and older age groups were less inclined to favour Biden. Even though the model shed light on the demographic factors that influence voting behaviour, there are a few things to keep in mind. These include the cross-sectional character of the data and the absence of certain significant confounding variables. Despite these limitations, the study contributes to our understanding of the complex interplay between demographic characteristics and political preferences, highlighting the need for further research to elucidate the underlying mechanisms driving electoral outcomes.
+
+
+
+
 
 \newpage
 
@@ -177,69 +218,17 @@ Weaknesses and next steps should also be included.
 
 # Appendix {-}
 
-
-# Additional data details
-
 # Model details {#sec-model-details}
-
-## Posterior predictive check
-
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
-
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
-
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
-
-analysis_data <- arrow::read_parquet(here::here("data/analysis_data/analysis_data.parquet"))
-
-set.seed(853)
-
-analysis_data <- 
-  analysis_data |> 
-  slice_sample(n = 1000)
-
-
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
-
-## Diagnostics
-
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
-
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
-
 ```{r}
 #| echo: false
 #| eval: true
-#| message: false
+#| label: fig-modelresultsfig
+#| fig-cap: "Logistic Regression Model"
 #| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
 
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
+modelplot(first_model, conf_level = 0.9) +
+  labs(x = "90 per cent credibility interval")
 ```
-
-
 
 
 
